@@ -1,0 +1,9 @@
+{
+  "name": "Fields Uno",
+  "short_name": "Uno",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0c2418",
+  "theme_color": "#12301f",
+  "icons": []
+}

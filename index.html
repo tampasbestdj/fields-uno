@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#12301f" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Fields Uno</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<style>
+  :root {
+    --felt: #143524;
+    --felt-deep: #0c2418;
+    --gold: #e7c56a;
+    --ink: #f6f1e4;
+    --muted: #c9d7cc;
+    --red: #d62828;
+    --yellow: #f4c430;
+    --green: #2a9d4a;
+    --blue: #1d6fbf;
+    --wild: #1b1b1b;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: var(--felt-deep); color: var(--ink); font-family: "Trebuchet MS", "Segoe UI", sans-serif; }
+  body { min-height: 100dvh; }
+  button, input { font: inherit; }
+  button { cursor: pointer; }
+  .app { min-height: 100dvh; display: flex; flex-direction: column; }
+  .lobby {
+    min-height: 100dvh;
+    padding: 28px 18px 40px;
+    background:
+      radial-gradient(900px 420px at 50% -10%, rgba(231,197,106,.18), transparent 60%),
+      linear-gradient(180deg, #1a4630, #0c2418 70%);
+  }
+  .brand { text-align: center; margin-bottom: 18px; }
+  .brand h1 { margin: 0; font-size: 42px; letter-spacing: 2px; color: var(--gold); }
+  .brand p { margin: 6px 0 0; color: var(--muted); }
+  .card-row { display: flex; justify-content: center; gap: 8px; margin: 18px 0 8px; }
+  .mini {
+    width: 46px; height: 68px; border-radius: 8px; border: 3px solid #fff;
+    display: grid; place-items: center; font-weight: 800; color: #fff;
+    box-shadow: 0 8px 16px rgba(0,0,0,.35); transform: rotate(var(--r));
+  }
+  .panel {
+    background: rgba(8, 24, 16, .72);
+    border: 1px solid rgba(231,197,106,.35);
+    border-radius: 18px;
+    padding: 16px;
+    margin: 12px auto;
+    max-width: 460px;
+  }
+  label { display: block; font-size: 13px; color: var(--gold); margin-bottom: 6px; }
+  input[type="text"] {
+    width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,.18);
+    background: #10281b; color: white; padding: 14px 12px; margin-bottom: 12px;
+  }
+  .actions { display: flex; gap: 10px; }
+  .btn {
+    flex: 1; border: 0; border-radius: 14px; padding: 14px 12px; font-weight: 800;
+    background: var(--gold); color: #1b1404;
+  }
+  .btn.ghost { background: transparent; color: var(--gold); border: 1px solid rgba(231,197,106,.5); }
+  .btn:disabled { opacity: .45; }
+  .hint { color: var(--muted); font-size: 14px; line-height: 1.45; }
+  .code {
+    font-size: 40px; letter-spacing: 8px; text-align: center; color: var(--gold);
+    font-weight: 900; margin: 8px 0;
+  }
+  .table {
+    flex: 1; display: grid;
+    grid-template-rows: auto 1fr auto auto;
+    min-height: 100dvh;
+    background:
+      radial-gradient(700px 320px at 50% 42%, rgba(255,255,255,.05), transparent 60%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.015) 0 2px, transparent 2px 14px),
+      var(--felt);
+  }
+  .opp, .youbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px 8px;
+    gap: 8px;
+  }
+  .who { font-weight: 800; }
+  .backs { display: flex; }
+  .back {
+    width: 28px; height: 40px; margin-left: -14px; border-radius: 5px;
+    background: linear-gradient(145deg, #b42323, #7d1212);
+    border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,.4);
+  }
+  .back:first-child { margin-left: 0; }
+  .count { background: #08160f; border-radius: 999px; padding: 4px 10px; font-size: 13px; }
+  .felt {
+    display: flex; align-items: center; justify-content: center; gap: 28px; position: relative;
+  }
+  .pile, .discard {
+    width: 96px; height: 142px; border-radius: 12px; position: relative;
+  }
+  .pile {
+    background: linear-gradient(160deg, #c43131, #8d1515);
+    border: 4px solid #fff;
+    box-shadow: 0 10px 18px rgba(0,0,0,.35);
+    display: grid; place-items: center; color: #fff; font-weight: 900; letter-spacing: 1px;
+  }
+  .pile span { background: #fff; color: #9d1c1c; border-radius: 50%; width: 46px; height: 46px; display: grid; place-items: center; }
+  .discard .card { width: 96px; height: 142px; }
+  .color-pip {
+    position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+    background: #08160f; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 800;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff; }
+  .hand {
+    display: flex; gap: 8px; overflow-x: auto; padding: 8px 16px 6px;
+    scroll-snap-type: x mandatory;
+  }
+  .hand .card { scroll-snap-align: center; flex: 0 0 auto; }
+  .card {
+    width: 78px; height: 116px; border-radius: 12px; border: 3px solid #fff;
+    position: relative; color: #fff; box-shadow: 0 8px 14px rgba(0,0,0,.28);
+    background: var(--c, #333);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card .oval {
+    width: 54px; height: 78px; border-radius: 40px;
+    background: rgba(255,255,255,.92); transform: rotate(-18deg);
+    display: grid; place-items: center; color: #1a1a1a; font-weight: 900; font-size: 26px;
+  }
+  .card .corner { position: absolute; font-weight: 900; font-size: 13px; text-shadow: 0 1px 1px rgba(0,0,0,.4); }
+  .card .tl { top: 4px; left: 6px; }
+  .card .br { bottom: 4px; right: 6px; transform: rotate(180deg); }
+  .card.playable { outline: 3px solid var(--gold); outline-offset: 2px; }
+  .card.wild { background: conic-gradient(#d62828, #f4c430, #2a9d4a, #1d6fbf, #d62828); color: #111; }
+  .card.wild .oval { background: #111; color: #fff; font-size: 16px; text-align: center; line-height: 1.05; padding: 4px; }
+  .youbar { padding-bottom: calc(10px + env(safe-area-inset-bottom)); gap: 8px; }
+  .tools { display: flex; gap: 8px; padding: 0 12px 8px; }
+  .tools button, .youbar button {
+    border: 0; border-radius: 12px; padding: 12px 10px; font-weight: 800; background: #08160f; color: var(--gold);
+    border: 1px solid rgba(231,197,106,.35);
+  }
+  .tools button.hot, .uno-hot { background: var(--gold); color: #1b1404; }
+  .log {
+    position: absolute; bottom: 8px; left: 12px; right: 12px; text-align: center;
+    color: #e7f5ea; font-size: 13px; text-shadow: 0 1px 2px #000; pointer-events: none;
+  }
+  .modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,.62);
+    display: grid; place-items: center; padding: 18px; z-index: 5;
+  }
+  .sheet {
+    width: min(420px, 100%); background: #10281b; border: 1px solid rgba(231,197,106,.4);
+    border-radius: 18px; padding: 16px;
+  }
+  .colors { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .colors button { border: 0; border-radius: 14px; padding: 22px 8px; color: #fff; font-weight: 900; font-size: 18px; }
+  .hidden { display: none !important; }
+  .status { text-align: center; color: var(--gold); min-height: 20px; font-size: 14px; }
+  .winner { font-size: 28px; color: var(--gold); text-align: center; margin: 0 0 8px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <section id="lobby" class="lobby">
+    <div class="brand">
+      <div class="card-row">
+        <div class="mini" style="--r:-10deg;background:#d62828">7</div>
+        <div class="mini" style="--r:-3deg;background:#f4c430;color:#222">★</div>
+        <div class="mini" style="--r:4deg;background:#2a9d4a">+2</div>
+        <div class="mini" style="--r:11deg;background:#1d6fbf">R</div>
+      </div>
+      <h1>FIELDS UNO</h1>
+      <p>Two phones. One table. Bill vs Lacey.</p>
+    </div>
+    <div class="panel">
+      <label for="name">Your name</label>
+      <input id="name" type="text" maxlength="18" placeholder="Bill" />
+      <div class="actions">
+        <button class="btn" id="hostBtn">Host game</button>
+        <button class="btn ghost" id="joinToggle">Join code</button>
+      </div>
+      <div id="joinBox" class="hidden" style="margin-top:12px">
+        <label for="codeIn">Room code</label>
+        <input id="codeIn" type="text" maxlength="5" placeholder="ABCDE" autocapitalize="characters" />
+        <button class="btn" id="joinBtn">Join table</button>
+      </div>
+      <p class="status" id="lobbyStatus"></p>
+    </div>
+    <div class="panel" id="waitPanel" class="hidden" style="display:none">
+      <div class="hint">Share this code. The other phone taps Join and types it.</div>
+      <div class="code" id="roomCode">-----</div>
+      <p class="hint" id="waitText">Waiting for the other phone…</p>
+      <button class="btn ghost" id="copyBtn">Copy code</button>
+    </div>
+    <div class="panel">
+      <p class="hint">Open this page on both phones. One hosts, the other joins. Reverse skips in a 2-player game. Tap UNO before you play your second-to-last card, or the other player can catch you. Wild Draw 4 can be challenged.</p>
+    </div>
+  </section>
+
+  <section id="game" class="table hidden">
+    <div class="opp">
+      <div>
+        <div class="who" id="oppName">Lacey</div>
+        <div class="backs" id="oppBacks"></div>
+      </div>
+      <div class="count" id="oppCount">7 cards</div>
+    </div>
+    <div class="felt">
+      <div class="color-pip"><span class="dot" id="colorDot"></span><span id="colorName">Red</span> · <span id="turnLabel">Your turn</span></div>
+      <button class="pile" id="drawPile" aria-label="Draw pile"><span>UNO</span></button>
+      <div class="discard" id="discard"></div>
+      <div class="log" id="log"></div>
+    </div>
+    <div class="tools">
+      <button id="unoBtn">UNO</button>
+      <button id="catchBtn" class="hidden">Catch!</button>
+      <button id="drawBtn">Draw</button>
+    </div>
+    <div class="hand" id="hand"></div>
+    <div class="youbar">
+      <div class="who" id="youName">Bill</div>
+      <button id="leaveBtn">Leave</button>
+    </div>
+  </section>
+</div>
+
+<div id="modal" class="modal hidden"></div>
+<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const COLORS = ["red", "yellow", "green", "blue"];
+const COLOR_HEX = { red: "#d62828", yellow: "#f4c430", green: "#2a9d4a", blue: "#1d6fbf", wild: "#222" };
+const COLOR_NAME = { red: "Red", yellow: "Yellow", green: "Green", blue: "Blue" };
+const VALUES = ["0","1","2","3","4","5","6","7","8","9","skip","reverse","draw2"];
+
+let peer, conn, role, room, myName, state, selectedWild = null;
+
+function uid() { return Math.random().toString(36).slice(2, 8); }
+function codeOf() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  return Array.from({length: 5}, () => alphabet[Math.floor(Math.random()*alphabet.length)]).join("");
+}
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function buildDeck() {
+  const deck = [];
+  for (const color of COLORS) {
+    deck.push({ id: uid(), color, value: "0" });
+    for (let n = 0; n < 2; n++) {
+      for (const value of VALUES.slice(1)) deck.push({ id: uid(), color, value });
+    }
+  }
+  for (let n = 0; n < 4; n++) {
+    deck.push({ id: uid(), color: "wild", value: "wild" });
+    deck.push({ id: uid(), color: "wild", value: "wild4" });
+  }
+  return shuffle(deck);
+}
+function label(card) {
+  if (!card) return "";
+  if (card.value === "skip") return "⊘";
+  if (card.value === "reverse") return "⇄";
+  if (card.value === "draw2") return "+2";
+  if (card.value === "wild") return "WILD";
+  if (card.value === "wild4") return "+4";
+  return card.value;
+}
+function other(p) { return p === "host" ? "guest" : "host"; }
+function topCard() { return state.discard[state.discard.length - 1]; }
+function canPlay(card, s) {
+  const top = s.discard[s.discard.length - 1];
+  if (s.pending > 0) {
+    if (s.pendingKind === "draw2") return card.value === "draw2";
+    if (s.pendingKind === "wild4") return card.value === "wild4";
+    return false;
+  }
+  if (card.color === "wild") {
+    if (card.value === "wild4") return !s.hands[s.turn].some(c => c.color === s.color);
+    return true;
+  }
+  return card.color === s.color || card.value === top.value;
+}
+function reshuffle(s) {
+  if (s.deck.length) return;
+  const top = s.discard.pop();
+  s.deck = shuffle(s.discard);
+  s.discard = [top];
+}
+function drawCards(s, who, n) {
+  const drawn = [];
+  for (let i = 0; i < n; i++) {
+    reshuffle(s);
+    if (!s.deck.length) break;
+    drawn.push(s.deck.pop());
+  }
+  s.hands[who].push(...drawn);
+  s.uno[who] = false;
+  return drawn;
+}
+function fresh(hostName, guestName) {
+  const deck = buildDeck();
+  const hands = { host: deck.splice(0, 7), guest: deck.splice(0, 7) };
+  let first = deck.pop();
+  while (first.value === "wild4") { deck.unshift(first); first = deck.pop(); }
+  const s = {
+    hands, deck, discard: [first],
+    color: first.color === "wild" ? "red" : first.color,
+    turn: "host",
+    pending: 0, pendingKind: null,
+    winner: null,
+    uno: { host: false, guest: false },
+    catch: null,
+    names: { host: hostName, guest: guestName || "Lacey" },
+    log: "Deal. First card is up.",
+    seq: 1
+  };
+  if (first.value === "skip" || first.value === "reverse") s.turn = "guest";
+  if (first.value === "draw2") { s.pending = 2; s.pendingKind = "draw2"; s.turn = "host"; }
+  if (first.value === "wild") s.needColor = "host";
+  return s;
+}
+
+function applyPlay(s, who, cardId, chosen) {
+  if (s.winner || s.turn !== who) return "Not your turn.";
+  const idx = s.hands[who].findIndex(c => c.id === cardId);
+  if (idx < 0) return "Card not in hand.";
+  const card = s.hands[who][idx];
+  if (!canPlay(card, s) && !(s.pending && (card.value === s.pendingKind || (s.pendingKind === "wild4" && card.value === "wild4") || (s.pendingKind === "draw2" && card.value === "draw2")))) {
+    return "That card does not play.";
+  }
+  if (card.value === "wild4" && s.hands[who].some(c => c.color === s.color) && s.pendingKind !== "wild4") {
+    return "Wild +4 only if you have no card of the current color.";
+  }
+  s.hands[who].splice(idx, 1);
+  s.discard.push(card);
+  s.needColor = null;
+  const goingOut = s.hands[who].length === 0;
+  if (s.hands[who].length === 1 && !s.uno[who]) s.catch = { who, until: Date.now() + 5000 };
+  else s.catch = null;
+  if (goingOut && (card.value === "draw2" || card.value === "wild4")) {
+    s.hands[who].push(s.discard.pop());
+    return "Cannot finish on a draw card.";
+  }
+  if (card.color !== "wild") s.color = card.color;
+  if (card.value === "wild" || card.value === "wild4") {
+    s.color = COLORS.includes(chosen) ? chosen : "red";
+  }
+  if (card.value === "draw2") { s.pending += 2; s.pendingKind = "draw2"; }
+  else if (card.value === "wild4") { s.pending += 4; s.pendingKind = "wild4"; }
+  else if (s.pending && card.value !== "draw2" && card.value !== "wild4") { s.pending = 0; s.pendingKind = null; }
+  if (goingOut) {
+    s.winner = who;
+    s.log = s.names[who] + " wins.";
+    return null;
+  }
+  const skip = card.value === "skip" || card.value === "reverse" || card.value === "draw2" || card.value === "wild4";
+  s.turn = skip ? who : other(who);
+  if (card.value === "draw2" || card.value === "wild4") s.turn = other(who);
+  s.uno[who] = s.hands[who].length === 1 ? s.uno[who] : false;
+  s.log = s.names[who] + " played " + label(card) + ".";
+  return null;
+}
+function applyDraw(s, who) {
+  if (s.winner || s.turn !== who) return "Not your turn.";
+  if (s.pending) {
+    drawCards(s, who, s.pending);
+    s.log = s.names[who] + " draws " + s.pending + ".";
+    s.pending = 0; s.pendingKind = null;
+    s.turn = other(who);
+    return null;
+  }
+  const drawn = drawCards(s, who, 1);
+  if (!drawn.length) return "No cards left.";
+  const card = drawn[0];
+  if (canPlay(card, s)) {
+    s.mustPlayDrawn = card.id;
+    s.log = s.names[who] + " drew a playable card.";
+  } else {
+    s.turn = other(who);
+    s.log = s.names[who] + " draws and passes.";
+  }
+  return null;
+}
+function applyAction(s, msg) {
+  if (msg.type === "uno") {
+    if (s.hands[msg.who].length === 2 || s.hands[msg.who].length === 1) {
+      s.uno[msg.who] = true;
+      s.catch = null;
+      s.log = s.names[msg.who] + " called UNO.";
+    }
+    return;
+  }
+  if (msg.type === "catch") {
+    if (s.catch && s.catch.who !== msg.who && Date.now() < s.catch.until) {
+      drawCards(s, s.catch.who, 2);
+      s.log = s.names[msg.who] + " caught " + s.names[s.catch.who] + ". Draw 2.";
+      s.catch = null;
+    }
+    return;
+  }
+  if (msg.type === "play") applyPlay(s, msg.who, msg.cardId, msg.color);
+  if (msg.type === "draw") applyDraw(s, msg.who);
+  s.seq++;
+}
+
+function publicState() {
+  return state;
+}
+function sendState() {
+  if (conn && conn.open) conn.send({ type: "state", state });
+  render();
+}
+function hostAction(msg) {
+  applyAction(state, msg);
+  sendState();
+}
+
+function renderCard(card, playable) {
+  const el = document.createElement("button");
+  el.className = "card" + (card.color === "wild" ? " wild" : "") + (playable ? " playable" : "");
+  el.style.setProperty("--c", COLOR_HEX[card.color] || "#333");
+  el.innerHTML = `<span class="corner tl">${label(card)}</span><span class="oval">${label(card)}</span><span class="corner br">${label(card)}</span>`;
+  return el;
+}
+function render() {
+  if (!state) return;
+  $("lobby").classList.add("hidden");
+  $("game").classList.remove("hidden");
+  const me = role;
+  const them = other(me);
+  $("youName").textContent = state.names[me] || myName;
+  $("oppName").textContent = state.names[them] || "Opponent";
+  $("oppCount").textContent = state.hands[them].length + " cards";
+  const backs = $("oppBacks");
+  backs.innerHTML = "";
+  for (let i = 0; i < Math.min(state.hands[them].length, 8); i++) {
+    const b = document.createElement("div");
+    b.className = "back";
+    backs.appendChild(b);
+  }
+  $("colorDot").style.background = COLOR_HEX[state.color];
+  $("colorName").textContent = COLOR_NAME[state.color] || state.color;
+  $("turnLabel").textContent = state.winner ? "Game over" : (state.turn === me ? "Your turn" : "Their turn");
+  $("log").textContent = state.log || "";
+  const disc = $("discard");
+  disc.innerHTML = "";
+  disc.appendChild(renderCard(topCard(), false));
+  const hand = $("hand");
+  hand.innerHTML = "";
+  const mine = state.hands[me];
+  mine.forEach(card => {
+    const playable = state.turn === me && !state.winner && canPlay(card, state);
+    const el = renderCard(card, playable);
+    el.disabled = !playable;
+    el.onclick = () => onPlay(card);
+    hand.appendChild(el);
+  });
+  $("unoBtn").classList.toggle("hot", !!state.uno[me]);
+  const showCatch = state.catch && state.catch.who !== me && Date.now() < state.catch.until;
+  $("catchBtn").classList.toggle("hidden", !showCatch);
+  $("drawBtn").disabled = state.turn !== me || !!state.winner;
+  if (state.winner) showWinner();
+}
+function showWinner() {
+  const me = role;
+  $("modal").classList.remove("hidden");
+  $("modal").innerHTML = `<div class="sheet">
+    <h2 class="winner">${state.names[state.winner]} wins</h2>
+    <p class="hint">${state.winner === me ? "You emptied your hand." : "They emptied their hand."}</p>
+    <div class="actions"><button class="btn" id="again">Play again</button><button class="btn ghost" id="closeWin">Close</button></div>
+  </div>`;
+  $("again").onclick = () => {
+    $("modal").classList.add("hidden");
+    if (role === "host") {
+      state = fresh(state.names.host, state.names.guest);
+      sendState();
+    } else conn.send({ type: "again" });
+  };
+  $("closeWin").onclick = () => $("modal").classList.add("hidden");
+}
+function askColor(card) {
+  return new Promise(resolve => {
+    $("modal").classList.remove("hidden");
+    $("modal").innerHTML = `<div class="sheet"><h2 style="margin:0 0 10px;color:#e7c56a">Pick a color</h2><div class="colors">
+      <button style="background:#d62828" data-c="red">Red</button>
+      <button style="background:#c9a227;color:#222" data-c="yellow">Yellow</button>
+      <button style="background:#2a9d4a" data-c="green">Green</button>
+      <button style="background:#1d6fbf" data-c="blue">Blue</button>
+    </div></div>`;
+    $("modal").querySelectorAll("button").forEach(b => b.onclick = () => {
+      $("modal").classList.add("hidden");
+      resolve(b.dataset.c);
+    });
+  });
+}
+async function onPlay(card) {
+  let color = null;
+  if (card.color === "wild") color = await askColor(card);
+  if (role === "host") hostAction({ type: "play", who: "host", cardId: card.id, color });
+  else conn.send({ type: "play", who: "guest", cardId: card.id, color });
+  if (navigator.vibrate) navigator.vibrate(12);
+}
+function onDraw() {
+  if (role === "host") hostAction({ type: "draw", who: "host" });
+  else conn.send({ type: "draw", who: "guest" });
+}
+function onUno() {
+  if (role === "host") hostAction({ type: "uno", who: "host" });
+  else conn.send({ type: "uno", who: "guest" });
+}
+function onCatch() {
+  if (role === "host") hostAction({ type: "catch", who: "host" });
+  else conn.send({ type: "catch", who: "guest" });
+}
+
+function setStatus(t) { $("lobbyStatus").textContent = t; }
+function showWait(code) {
+  $("waitPanel").style.display = "block";
+  $("roomCode").textContent = code;
+  $("waitText").textContent = "Waiting for the other phone…";
+}
+function bindConn(c) {
+  conn = c;
+  conn.on("data", (msg) => {
+    if (role === "host") {
+      if (msg.type === "hello") {
+        state.names.guest = msg.name || "Lacey";
+        sendState();
+        $("waitText").textContent = state.names.guest + " joined.";
+      } else if (msg.type === "again") {
+        state = fresh(state.names.host, state.names.guest);
+        sendState();
+      } else hostAction(msg);
+    } else if (msg.type === "state") {
+      state = msg.state;
+      render();
+    }
+  });
+  conn.on("open", () => {
+    if (role === "guest") conn.send({ type: "hello", name: myName });
+    setStatus("Connected.");
+  });
+  conn.on("close", () => setStatus("Other phone disconnected."));
+}
+
+function hostGame() {
+  myName = $("name").value.trim() || "Bill";
+  room = codeOf();
+  setStatus("Opening table…");
+  peer = new Peer("fieldsuno-" + room.toLowerCase(), { debug: 0 });
+  peer.on("open", () => {
+    showWait(room);
+    state = fresh(myName, "Lacey");
+    role = "host";
+    setStatus("Table open. Code " + room);
+    const url = location.origin + location.pathname + "?room=" + room;
+    $("copyBtn").onclick = () => navigator.clipboard?.writeText(room + "\n" + url);
+  });
+  peer.on("connection", (c) => bindConn(c));
+  peer.on("error", (err) => {
+    if (err.type === "unavailable-id") {
+      room = codeOf();
+      peer.destroy();
+      hostGame();
+      return;
+    }
+    setStatus(err.message || "Could not open table. Check signal and try again.");
+  });
+}
+function joinGame(code) {
+  myName = $("name").value.trim() || "Lacey";
+  room = (code || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (room.length < 4) { setStatus("Enter the 5-letter code."); return; }
+  setStatus("Joining " + room + "…");
+  role = "guest";
+  peer = new Peer({ debug: 0 });
+  peer.on("open", () => {
+    const c = peer.connect("fieldsuno-" + room.toLowerCase(), { reliable: true });
+    bindConn(c);
+    showWait(room);
+    $("waitText").textContent = "Connecting to " + room + "…";
+  });
+  peer.on("error", (err) => setStatus(err.type === "peer-unavailable" ? "No table with that code. Host must stay on the page." : (err.message || "Join failed.")));
+}
+
+$("hostBtn").onclick = hostGame;
+$("joinToggle").onclick = () => $("joinBox").classList.toggle("hidden");
+$("joinBtn").onclick = () => joinGame($("codeIn").value);
+$("drawBtn").onclick = onDraw;
+$("drawPile").onclick = onDraw;
+$("unoBtn").onclick = onUno;
+$("catchBtn").onclick = onCatch;
+$("leaveBtn").onclick = () => location.reload();
+$("name").value = "Bill";
+
+const params = new URLSearchParams(location.search);
+if (params.get("room")) {
+  $("name").value = "Lacey";
+  $("joinBox").classList.remove("hidden");
+  $("codeIn").value = params.get("room");
+}
+setInterval(() => { if (state && state.catch && Date.now() > state.catch.until) { state.catch = null; render(); } }, 500);
+</script>
+</body>
+</html>
