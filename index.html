@@ -156,7 +156,10 @@
   .colors button { border: 0; border-radius: 14px; padding: 22px 8px; color: #fff; font-weight: 900; font-size: 18px; }
   .hidden { display: none !important; }
   .status { text-align: center; color: var(--gold); min-height: 20px; font-size: 14px; }
-  .winner { font-size: 28px; color: var(--gold); text-align: center; margin: 0 0 8px; }
+  .turn-now { color: #e7c56a; animation: pulse 0.8s ease 3; }
+  @keyframes pulse { 50% { transform: scale(1.08); } }
+  .flash { animation: flash 0.6s ease; }
+  @keyframes flash { 0% { box-shadow: inset 0 0 0 8px #e7c56a; } 100% { box-shadow: inset 0 0 0 0 #e7c56a; } }
 </style>
 </head>
 <body>
@@ -234,6 +237,47 @@ const COLOR_NAME = { red: "Red", yellow: "Yellow", green: "Green", blue: "Blue" 
 const VALUES = ["0","1","2","3","4","5","6","7","8","9","skip","reverse","draw2"];
 
 let peer, conn, role, room, myName, state, selectedWild = null;
+let audioCtx = null;
+let lastAlertKey = "";
+
+function unlockAudio() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return;
+  if (!audioCtx) audioCtx = new AC();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+}
+function yourTurnAlert() {
+  unlockAudio();
+  try {
+    if (audioCtx) {
+      const now = audioCtx.currentTime;
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = "square";
+      o.frequency.setValueAtTime(880, now);
+      o.frequency.setValueAtTime(1175, now + 0.12);
+      o.frequency.setValueAtTime(880, now + 0.24);
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.exponentialRampToValueAtTime(0.22, now + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+      o.connect(g);
+      g.connect(audioCtx.destination);
+      o.start(now);
+      o.stop(now + 0.46);
+    }
+  } catch (e) {}
+  if (navigator.vibrate) navigator.vibrate([200, 90, 200, 90, 320]);
+  document.body.classList.remove("flash");
+  void document.body.offsetWidth;
+  document.body.classList.add("flash");
+}
+function maybeAlert() {
+  if (!state || state.winner || state.turn !== role) return;
+  const key = (state.seq || 0) + ":" + state.log;
+  if (key === lastAlertKey) return;
+  lastAlertKey = key;
+  yourTurnAlert();
+}
 
 function uid() { return Math.random().toString(36).slice(2, 8); }
 function codeOf() {
@@ -445,7 +489,8 @@ function render() {
   }
   $("colorDot").style.background = COLOR_HEX[state.color];
   $("colorName").textContent = COLOR_NAME[state.color] || state.color;
-  $("turnLabel").textContent = state.winner ? "Game over" : (state.turn === me ? "Your turn" : "Their turn");
+  $("turnLabel").textContent = state.winner ? "Game over" : (state.turn === me ? "YOUR TURN" : "Their turn");
+  $("turnLabel").classList.toggle("turn-now", state.turn === me && !state.winner);
   $("log").textContent = state.log || "";
   const disc = $("discard");
   disc.innerHTML = "";
@@ -465,6 +510,7 @@ function render() {
   $("catchBtn").classList.toggle("hidden", !showCatch);
   $("drawBtn").disabled = state.turn !== me || !!state.winner;
   if (state.winner) showWinner();
+  else maybeAlert();
 }
 function showWinner() {
   const me = role;
@@ -588,9 +634,9 @@ function joinGame(code) {
   peer.on("error", (err) => setStatus(err.type === "peer-unavailable" ? "No table with that code. Host must stay on the page." : (err.message || "Join failed.")));
 }
 
-$("hostBtn").onclick = hostGame;
-$("joinToggle").onclick = () => $("joinBox").classList.toggle("hidden");
-$("joinBtn").onclick = () => joinGame($("codeIn").value);
+$("hostBtn").onclick = () => { unlockAudio(); hostGame(); };
+$("joinToggle").onclick = () => { unlockAudio(); $("joinBox").classList.toggle("hidden"); };
+$("joinBtn").onclick = () => { unlockAudio(); joinGame($("codeIn").value); };
 $("drawBtn").onclick = onDraw;
 $("drawPile").onclick = onDraw;
 $("unoBtn").onclick = onUno;
